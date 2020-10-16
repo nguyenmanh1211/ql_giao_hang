@@ -1,0 +1,222 @@
+import React, { useEffect, useState } from 'react';
+import { makeStyles } from '@material-ui/core/styles';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableContainer from '@material-ui/core/TableContainer';
+import TableHead from '@material-ui/core/TableHead';
+import TableRow from '@material-ui/core/TableRow';
+import Paper from '@material-ui/core/Paper';
+import './style.css';
+import {apifetchGetPartnerById,apifetchOrderByPartnerId} from '../../../apis/partner';
+import { NavLink } from 'react-router-dom';
+
+const useStyles = makeStyles({
+  table: {
+    minWidth: 650,
+  },
+});
+
+function createData(name, calories, fat) {
+  return { name, calories, fat };
+}
+
+const rows = [
+  createData('Frozen yoghurt', 159, 6.0),
+  createData('Ice cream sandwich', 237, 9.0),
+  createData('Eclair', 262, 16.0),
+  createData('Cupcake', 305, 3.7),
+  createData('Gingerbread', 356, 16.0),
+];
+
+const statuss = [
+  { id: 'Đã giao dịch', color: '#4caf50' },
+  { id: 'Đang giao dịch', color: '#1e88e5' },
+  { id: 'Đã hủy', color: '#f44336' },
+  { id: 'Đang xử lý', color: '#f9a825' },
+];
+
+export default function PartnerDetail(props) {
+  const classes = useStyles();
+  const [partnerDeatil,setPartnerDeatil]= useState({});
+  const [order,setOrder]=useState([]);
+  const [totalMoney,setTotalMoney]=useState([]);
+
+  useEffect(()=>{
+    var url=props.match.url;
+    var id=url.slice(21); 
+    apifetchGetPartnerById(id).then((res)=>{
+      setPartnerDeatil(res.data);
+      }).catch(er=>console.log(er))
+  },[props.match.url]);
+
+  useEffect(()=>{
+    var url=props.match.url;
+    var id=url.slice(21); 
+    apifetchOrderByPartnerId(id).then((res)=>{
+      console.log(res.data)
+      setOrder(res.data);
+      setTotalMoney(res.data)
+      }).catch(er=>console.log(er))
+  },[props.match.url]);
+
+  function listOrder(){
+    let result=order.map((item,index)=>
+      <TableRow key={index}>
+        <TableCell component="th" scope="row">
+          <NavLink to={`/admin/orders-update/${item.id}`}>
+            {item.orderCode}
+          </NavLink>
+        </TableCell>
+        <TableCell align="left" style={{fontSize:"14px"}}>{item.shipPaymentStatus}</TableCell>
+        <TableCell align="left" style={{fontSize:"14px"}}>{item.status}</TableCell>
+        <TableCell align="left" style={{fontSize:"14px"}}>{item.statusAddressDelivery}</TableCell>
+        <TableCell align="left" style={{fontSize:"14px"}}>{item.statusDelivery}</TableCell>
+        <TableCell align="left" style={{fontSize:"14px"}}>{item.statusPay}</TableCell>
+        <TableCell align="left" style={{fontSize:"14px"}}>{item.statusPayShipper}</TableCell>
+        <TableCell align="left" style={{fontSize:"14px"}}>
+          <NavLink to={`/admin/order/orderDetail/${item.idShipper}`}>
+          {item.shipperName}
+          </NavLink>
+          </TableCell>
+        <TableCell align="left" style={{fontSize:"14px"}}>{item.totalMoney}</TableCell>
+      </TableRow>
+    )
+    return result;
+  }
+
+  function totalMoneyOrder(){
+    var t=0;
+    for(var i=0;i<totalMoney.length;i++){
+      t+=totalMoney[i].totalMoney;
+    }
+    return t;
+    
+  }
+
+  return (
+    <div className="partnerDetail">
+      <div className='title m-header'>
+        <div className='d-flex'>
+          <div className=''>
+            <h2>Chi tiết khách hàng</h2>
+          </div>
+          
+          <br />
+        </div>
+      </div>
+      <div className="thongtin">
+    <TableContainer component={Paper}>
+      <Table className={classes.table} size="small" aria-label="a dense table" style={{tableLayout:'fixed'}}>
+        <TableHead>
+          <TableRow style={{height:"60px"}}>
+            <TableCell align="left">Thông tin cá nhân</TableCell>
+            <TableCell align="left">Trạng thái : {partnerDeatil.isActive === 0 ? (
+                          <span style={{ color: statuss[0].color }}>
+                            {statuss[0].id}
+                          </span>
+                        ) : partnerDeatil.isActive === 1 ? (
+                          <span style={{ color: statuss[1].color }}>
+                            {statuss[1].id}
+                          </span>
+                        ) : partnerDeatil.isActive === 2 ? (
+                          <span style={{ color: statuss[2].color }}>
+                            {statuss[2].id}
+                          </span>
+                        ) : partnerDeatil.isActive === 3 ? (
+                          <span style={{ color: statuss[3].color }}>
+                            {statuss[3].id}
+                          </span>
+                        ) : (
+                          'null'
+                        )}
+            </TableCell>
+            <TableCell align="left"></TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+        <TableRow>
+         <TableCell component="th" style={{borderBottom:"0px"}}>
+           <div>
+           <p style={{float:"left",width:"135px"}}>Mã Khách Hàng</p>
+           <p style={{float:"left",marginRight:"10px"}}>:</p> 
+           <p>{partnerDeatil.code}</p>
+           </div>
+         </TableCell>
+         <TableCell align="left" style={{borderBottom:"0px"}}>
+         <p style={{float:"left",width:"135px"}}>Email</p> 
+         <p style={{float:"left",marginRight:"10px"}}>:</p> 
+         <p>{partnerDeatil.email}</p>
+         </TableCell>
+         <TableCell align="left" style={{borderBottom:"0px"}}></TableCell>
+       </TableRow>
+       <TableRow>
+         <TableCell component="th" style={{borderBottom:"0px"}}>
+         <p style={{float:"left",width:"135px"}}>Tên Khách Hàng</p>    
+         <p style={{float:"left",marginRight:"10px"}}>:</p>  
+         <p>{partnerDeatil.partnerName}</p>
+         </TableCell>
+         <TableCell align="left" style={{borderBottom:"0px"}}>
+         <p style={{float:"left",width:"135px"}}>Địa chỉ</p>    
+           <p style={{float:"left",marginRight:"10px"}}>:</p> 
+            <p>{partnerDeatil.partnerAddress}</p>
+            </TableCell>
+         <TableCell align="left" style={{borderBottom:"0px"}}></TableCell>
+       </TableRow>
+       <TableRow>
+         <TableCell component="th" style={{borderBottom:"0px"}}>
+         <p style={{float:"left",width:"135px"}}>Số điện thoại</p>       
+           <p style={{float:"left",marginRight:"10px"}}>:</p> 
+           <p>{partnerDeatil.phoneNumber}</p>
+         </TableCell>
+         <TableCell align="left" style={{borderBottom:"0px"}}>
+         <p style={{float:"left",width:"135px"}}>Tổng đơn hàng</p>    
+           <p style={{float:"left",marginRight:"10px"}}>:</p>  
+           <p>{partnerDeatil.totalOrder}</p>
+           </TableCell>
+         <TableCell align="left" style={{borderBottom:"0px"}}></TableCell>
+       </TableRow>
+        </TableBody>
+      </Table>
+    </TableContainer>
+    </div>
+    <div className="chitiet" style={{marginTop:"25px"}}>
+    <TableContainer component={Paper}>
+      <div className="menu">
+        <ul className="ul_tab">
+          <li className="li_tab">Lịch sử</li>
+          <li className="li_tab">Công nợ</li>
+          <li className="li_tab">Liên hệ</li>
+          <li className="li_tab">Ghi chú</li>
+        </ul>
+      </div>
+      <Table className={classes.table} aria-label="caption table" style={{tableLayout:'fixed'}}>
+      <TableHead>
+          <TableRow>
+            <TableCell align="left" style={{fontSize:"14px"}}>Mã đơn hàng</TableCell>
+            <TableCell align="left" style={{fontSize:"14px"}}>Trạng thái 1</TableCell>
+            <TableCell align="left" style={{fontSize:"14px"}}>Trạng thái 2</TableCell>
+            <TableCell align="left" style={{fontSize:"14px"}}>Trạng thái 3</TableCell>
+            <TableCell align="left" style={{fontSize:"14px"}}>Trạng thái 4</TableCell>
+            <TableCell align="left" style={{fontSize:"14px"}}>Trạng thái 5</TableCell>
+            <TableCell align="left" style={{fontSize:"14px"}}>Trạng thái 6</TableCell>
+            <TableCell align="left" style={{fontSize:"14px"}}>Người giao hàng</TableCell>
+            <TableCell align="left" style={{fontSize:"14px"}}>Tổng tiền</TableCell>
+          </TableRow>
+        </TableHead>
+                        <caption style={{color:"black",marginTop:"5px"}}>
+                          <p style={{float:"left"}}>Hiển thị kết quả 1 - {partnerDeatil.totalOrder} trên tổng {partnerDeatil.totalOrder}</p> 
+                          <div style={{float:"right",width:"155px"}}>
+                            <p style={{textAlign:"center",fontSize:"18px",fontWeight:"bold",width:"70px"}}>{totalMoneyOrder()}</p>
+                            </div>
+                          </caption>
+        <TableBody>
+          {listOrder()}
+        </TableBody>
+      </Table>
+    </TableContainer>
+    </div>
+    </div>
+    
+  );
+}

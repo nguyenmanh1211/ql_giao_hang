@@ -1,0 +1,300 @@
+/* eslint-disable jsx-a11y/anchor-is-valid */
+import React, { useEffect, useState } from 'react';
+import PropTypes from 'prop-types';
+import { connect } from 'react-redux';
+import { NavLink } from 'react-router-dom';
+import { Checkbox } from 'pretty-checkbox-react';
+import 'pretty-checkbox';
+import PartnerItem from './PartnerItem/PartnerItem';
+import {
+  clearProductItem,
+  getAllProductRequest,
+} from '../../redux/actions/product';
+import {
+  setSttAfterCreate,
+  setSttCheckBox,
+  setSttCreateSuccess,
+  setSttFailSave,
+} from '../../redux/actions/SetSttCheckBox';
+import { Tooltip } from '@material-ui/core';
+import Page from '../page/Page';
+import AxiosService from '../../utils/axoisService';
+import {apifetchListPartners} from '../../apis/partner';
+
+const PartnerList = (props) => {
+  const [checked, setChecked] = useState(false);
+  const [iconClass, setIconClass] = useState('');
+  const [length, setLength] = useState(0);
+  const [categories, setCategories] = useState([]);
+  const [disable, setDisable] = useState(false);
+  const [action, setAction] = useState(false);
+  const [partner,setPartner] = useState([]);
+  const [pageNumber,setPageNumber]=useState(0);
+  const [itemNumber,setItemNumber]=useState(5);
+  const [totalItem,setTotalItem]=useState(0);
+
+  const showCategoryItem = () => {
+    let result = null;
+    if (partner.length > 1) {
+      localStorage.setItem('length', partner.length);
+      result = partner.map((product, index) => {
+        return (
+          <PartnerItem
+            product={product}
+            key={index}
+            getItemChecked={getItemChecked}
+            stt={checked}
+          />
+        );
+      });
+    }
+    return result;
+  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setDisable(
+      categories.length !== 0 &&
+        categories.length < parseInt(localStorage.getItem('length'))
+        ? true
+        : false
+    );
+  });
+  useEffect(() => {
+    apifetchListPartners(pageNumber,itemNumber).then((res)=>{
+      setPartner(res.data);
+    }).catch(er=>console.log(er))
+  },[pageNumber]);
+
+  useEffect(() => {
+    AxiosService.get(`http://localhost:8080/api/partner/totalItem`).then((res)=>{
+      setTotalItem(res.data);
+    }).catch(er=>console.log(er))
+  },[]);
+  
+
+  const getItemChecked = (id, status) => {
+    if (status) {
+      categories.push(id);
+      setIcon();
+      setCategories(categories);
+      setLength(categories.length);
+    }
+    if (!status) {
+      categories.map((cate, index) => {
+        if (id === cate) {
+          categories.splice(index, 1);
+          setCategories(categories);
+          setIcon();
+          setLength(categories.length);
+        }
+        if (categories.length === 0) {
+          setChecked(false);
+          setAction(false);
+        }
+        return null;
+      });
+    }
+  };
+
+  const setIcon = () => {
+    if (categories.length > 0) {
+      if (categories.length === parseInt(localStorage.getItem('length'))) {
+        setIconClass(' fa fa-check');
+        props.setStt(true);
+        setChecked(true);
+      } else {
+        setChecked(true);
+        setIconClass(' fa fa-minus');
+      }
+    } else {
+      props.setStt(false);
+    }
+  };
+
+  const handleChangePage = (page) =>{
+    console.log(page)
+    setPageNumber(page-1);
+  };
+
+  useEffect(() => {
+    props.getAllProduct(1, 10);
+    props.clear();
+    props.setCreated(false);
+    props.setFailSave(false);
+    props.setAfterCreate(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const handleChange = (e) => {
+    setChecked(e.target.checked);
+    if (checked) props.setStt(false);
+    if (!checked) props.setStt(true);
+  };
+  const setCategoryDisable = () => {
+    if (disable) {
+      props.setStt(-1);
+    }
+  };
+  const setActionChecked = () => {
+    setAction(!action);
+  };
+  const deleteCategory = () => {};
+  return (
+    <div className='product-list' style={{ fontSize: '14px' }}>
+      <div className='row m-header'>
+        <div className='d-flex'>
+          <div className=''>
+            <h2>Khách hàng</h2>
+          </div>
+          <div className='action-category'>
+            <NavLink to='/admin/product-add'>
+              <button type='button' className='btn btn-primary add-btn'>
+                Thêm khách hàng
+              </button>
+            </NavLink>
+          </div>
+          <br />
+        </div>
+      </div>
+      <div className='row'>
+        <div className='card bordershadow' style={{ width: '100%' }}>
+          <div className='card-header bg-white'>
+            <div className='table-header'>
+              <h6>Danh sách các danh mục</h6>
+            </div>
+          </div>
+          <div className='card-body'>
+            <div className='col-lg-12 col-12 col-md-12 bg-white'>
+              <div
+                className={
+                  categories.length === 0
+                    ? ' d-none-custom '
+                    : ' d-block-custom checked-actions'
+                }
+              >
+                <div className='apap'>
+                  <a
+                    className='btn btn-sm border'
+                    style={{ background: '#f5f5f5' }}
+                  >
+                    <span>(đã chọn {length} danh mục)</span>
+                  </a>
+                  <a
+                    className='btn btn-sm border dropdown-toggle'
+                    style={{
+                      background: 'linear-gradient(180deg,#fff,#f9fafb)',
+                    }}
+                    onClick={setActionChecked}
+                  >
+                    chọn thao tác
+                  </a>
+                </div>
+                <div>
+                  <div
+                    className={`_action_checked bordershadowC ${
+                      action === false ? 'd-none-custom' : 'd-block-custom'
+                    }`}
+                  >
+                    <div className='arrow'></div>
+                    <ul
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 400,
+                        lineHeight: 24,
+                        fontFamily: 'Segoe UI',
+                      }}>
+                      <li onClick={deleteCategory}>
+                        <a>Xoá sản phẩm</a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+                    
+              <div className='table-reponsive-sm'>
+                <table className='table' cellPadding='1' cellSpacing='0'>
+                  <thead>
+                    <tr>
+                      <th scope='col' style={{ width: 40 }}>
+                        <div
+                          style={{ cursor: 'pointer' }}
+                          onClick={setCategoryDisable}
+                        >
+                          <Tooltip
+                            title={length === 0 ? 'Chọn tất cả sản phẩm' : ''}
+                            placement='right'
+                          >
+                            <Checkbox
+                              disabled={disable}
+                              className='pretty-checkbox'
+                              color='info-o'
+                              shape='curve'
+                              animation='pulse'
+                              onChange={handleChange}
+                              checked={checked}
+                              icon={<i className={iconClass} />}
+                              data-tip
+                              data-for='_select_all'
+                            ></Checkbox>
+                          </Tooltip>
+                        </div>
+                      </th>
+                      <th scope='col' style={{ width: 75 }}></th>
+                      <th scope='col' style={{ minWidth: 220, width: 234 }}>
+                        Mã khách hàng
+                      </th>
+                      <th scope='col'>Tên khách hàng</th>
+                      <th scope='col'>Email</th>
+                      <th scope='col' className='text-center'>
+                        Số điện thoại
+                      </th>
+                      <th scope='col'>Tổng đơn hàng</th>
+                      <th scope='col'>Trạng thái</th>
+                      {/* <th scope='col'>Ngày khởi tạo</th> */}
+                    </tr>
+                  </thead>
+
+                  <tbody>{showCategoryItem(partner)}</tbody>
+                </table>
+              </div>
+            </div>
+            <div className='col-lg-12 col-md-12 col-12 mt-3'>
+              <Page item={itemNumber} totalItems={totalItem} changePage={handleChangePage}/>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  );
+};
+// CategoryList.propTypes = {
+//   getAllCategory: PropTypes.func,
+// };
+const mapStateToProps = (state) => {
+  return {
+    products: state.productReducer.products.products,
+  };
+};
+const mapDispatchToProps = (dispatch) => {
+  return {
+    getAllProduct: (page, limit) => {
+      dispatch(getAllProductRequest(page, limit));
+    },
+    setStt: (data) => {
+      dispatch(setSttCheckBox(data));
+    },
+    clear: () => {
+      dispatch(clearProductItem());
+    },
+    setCreated: (data) => {
+      dispatch(setSttCreateSuccess(data));
+    },
+    setFailSave: (data) => {
+      dispatch(setSttFailSave(data));
+    },
+    setAfterCreate: (data) => {
+      dispatch(setSttAfterCreate(data));
+    },
+  };
+};
+export default connect(mapStateToProps, mapDispatchToProps)(PartnerList);

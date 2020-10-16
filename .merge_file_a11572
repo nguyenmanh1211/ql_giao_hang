@@ -1,0 +1,94 @@
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { NavLink } from 'react-router-dom';
+import { Checkbox } from 'pretty-checkbox-react';
+import 'pretty-checkbox';
+import { connect } from 'react-redux';
+const PartnerItem = (props) => {
+  const [checked, setChecked] = useState(props.stt);
+  const { product } = props;
+  const handleChange = (e) => {
+    setChecked(e.target.checked);
+    if (checked !== e.target.checked) {
+      props.getItemChecked(product.id, e.target.checked);
+    }
+  };
+
+  const statuss = [
+    { id: 'Đã giao dịch', color: '#4caf50' },
+    { id: 'Đang giao dịch', color: '#1e88e5' },
+    { id: 'Đã hủy', color: '#f44336' },
+    { id: 'Đang xử lý', color: '#f9a825' },
+  ];
+
+  useEffect(() => {
+    if (props.stt && !checked) {
+      setChecked(true);
+      props.getItemChecked(product.id, true);
+    }
+    if (!props.stt && checked) {
+      setChecked(false);
+      props.getItemChecked(product.id, false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.stt]);
+
+  return (
+    <tr className='cateItem-h' style={{ lineHeight: '50px' }}>
+      <th scope='col'>
+        <Checkbox
+          className='pretty-checkbox'
+          shape='curve'
+          color='info-o'
+          onChange={handleChange}
+          checked={checked}
+          icon={<i className={`fa fa-check`} />}
+        ></Checkbox>
+      </th>
+      <td>
+        <img
+          style={{ width: '50px' }}
+          src='https://sapo.dktcdn.net/100/338/592/variants/733df53b-d891-4ac1-8df8-97d09b5e5f1b.jpg'
+          alt=''
+        />
+      </td>
+      <td>
+        <NavLink to={`/admin/partnerDetail/${product.id}`}>
+          {product.code}
+        </NavLink>
+      </td>
+      <td>{product.partnerName}</td>
+      <td>{product.email}</td>
+      <td className='text-center'>{product.phoneNumber}</td>
+      <td>{product.totalOrder}</td>
+      <td>{product.isActive === 0 ? (
+                          <span style={{ color: statuss[0].color }}>
+                            {statuss[0].id}
+                          </span>
+                        ) : product.isActive === 1 ? (
+                          <span style={{ color: statuss[1].color }}>
+                            {statuss[1].id}
+                          </span>
+                        ) : product.isActive === 2 ? (
+                          <span style={{ color: statuss[2].color }}>
+                            {statuss[2].id}
+                          </span>
+                        ) : product.isActive === 3 ? (
+                          <span style={{ color: statuss[3].color }}>
+                            {statuss[3].id}
+                          </span>
+                        ) : (
+                          'null'
+                        )}</td>
+    </tr>
+  );
+};
+PartnerItem.propTypes = {
+  category: PropTypes.object,
+};
+const mapStateToProps = (state) => {
+  return {
+    stt: state.statusReducer.sttCheckBox,
+  };
+};
+export default connect(mapStateToProps, null)(PartnerItem);
